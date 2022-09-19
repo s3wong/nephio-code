@@ -1,0 +1,7 @@
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: dummy # kpt-set: ${nadname}
+  namespace: dummy # kpt-set: ${nadns}
+spec:
+  config:
