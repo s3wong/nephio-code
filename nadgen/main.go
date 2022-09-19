@@ -37,7 +37,13 @@ type UpfNadGenSpec struct {
     N6Gw        string  `json:"n6gw,omitempty" yaml:"n6gw,omitempty"`
 }
 
-var UpfNadCfg string = `{
+var UpfNadCfg string = `apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: $NAD_NAME
+  namespace: $NAD_NAMESPACE
+spec:
+  config: '{
      "cniVersion": "$CNI_VERSION"
       "plugins": [
         {
@@ -58,7 +64,7 @@ var UpfNadCfg string = `{
           "capabilities": { "mac": true },
           "type": "tuning"
         }
-    }`
+    }'`
 
 func makeDirectory(path string) error {
     return os.MkdirAll(path, 0755)
@@ -86,7 +92,7 @@ func applySetterAndWriteFile (path string, append *os.File, setters map[string]s
 }
 
 func (s *UpfNadGen) writeNadInfo(path string, srcPath string, nadName string, namespace string, interfaceType string) error {
-    var setters map[string]string = make(map[string]string)
+    //var setters map[string]string = make(map[string]string)
     var cni, master, gw string
     switch interfaceType {
     case "n3":
@@ -105,8 +111,10 @@ func (s *UpfNadGen) writeNadInfo(path string, srcPath string, nadName string, na
         return errors.New("Unsupported UPF interface type " + interfaceType)
     }
     nadcfg := strings.Clone(UpfNadCfg)
-    setters["nadname"] = nadName + "-" + interfaceType
-    setters["nadns"] = namespace
+    //setters["nadname"] = nadName + "-" + interfaceType
+    //setters["nadns"] = namespace
+    nadcfg = strings.Replace(nadcfg, "$NAD_NAME", nadName + "-" + interfaceType, 1)
+    nadcfg = strings.Replace(nadcfg, "$NAD_NAMESPACE", namespace, 1)
     nadcfg = strings.Replace(nadcfg, "$CNI_VERSION", "0.3.1", 1)
     nadcfg = strings.Replace(nadcfg, "$CNI_TYPE", cni, 1)
     nadcfg = strings.Replace(nadcfg, "$NAD_MASTER", master, 1)
@@ -119,8 +127,10 @@ func (s *UpfNadGen) writeNadInfo(path string, srcPath string, nadName string, na
         log.Println("Error: open " + fileName + "failed :" + err.Error())
         return err
     }
-    applySetterAndWriteFile(srcPath + "/templates/nad.yaml", fp, setters, nadcfg)
-    return nil
+    //applySetterAndWriteFile(srcPath + "/templates/nad.yaml", fp, setters, nadcfg)
+    byteArray := []byte(nadcfg)
+    _, err = fp.Write(byteArray)
+    return err
 }
 
 func (gen *UpfNadGen) createDirs(basePath string, srcDir string, nadName string, namespace string) error {
