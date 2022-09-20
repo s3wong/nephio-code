@@ -44,26 +44,27 @@ metadata:
   namespace: $NAD_NAMESPACE
 spec:
   config: '{
-     "cniVersion": "$CNI_VERSION",
-     "plugins": [
-       {
-         "type": "$CNI_TYPE",
-         "capabilities": { "ips": true },
-         "master": "$NAD_MASTER",
-         "mode": "bridge",
-         "ipam": {
-           "type": "static",
-           "routes": [
-             {
-               "dst": "0.0.0.0/0",
-               "gw": "$NAD_GW"
-             }
-           ]
-         }
-       }, {
-         "capabilities": { "mac": true },
-         "type": "tuning"
-       }
+      "cniVersion": "$CNI_VERSION",
+      "plugins": [
+        {
+          "type": "$CNI_TYPE",
+          "capabilities": { "ips": true },
+          "master": "$NAD_MASTER",
+          "mode": "bridge",
+          "ipam": {
+            "type": "static",
+            "routes": [
+              {
+                "dst": "0.0.0.0/0",
+                "gw": "$NAD_GW"
+              }
+            ]
+          }
+        }, {
+          "capabilities": { "mac": true },
+          "type": "tuning"
+        }
+      ]
     }'`
 
 func makeDirectory(path string) error {
