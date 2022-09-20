@@ -44,26 +44,26 @@ metadata:
   namespace: $NAD_NAMESPACE
 spec:
   config: '{
-     "cniVersion": "$CNI_VERSION"
-      "plugins": [
-        {
-          "type": "$CNI_TYPE",
-          "capabilities": { "ips": true },
-          "master": "$NAD_MASTER",
-          "mode": "bridge",
-          "ipam": {
-            "type": "static",
-            "routes": [
-              {
-                "dst": "0.0.0.0/0",
-                "gw": "$NAD_GW"
-              }
-            ]
-          }
-        }, {
-          "capabilities": { "mac": true },
-          "type": "tuning"
-        }
+     "cniVersion": "$CNI_VERSION",
+     "plugins": [
+       {
+         "type": "$CNI_TYPE",
+         "capabilities": { "ips": true },
+         "master": "$NAD_MASTER",
+         "mode": "bridge",
+         "ipam": {
+           "type": "static",
+           "routes": [
+             {
+               "dst": "0.0.0.0/0",
+               "gw": "$NAD_GW"
+             }
+           ]
+         }
+       }, {
+         "capabilities": { "mac": true },
+         "type": "tuning"
+       }
     }'`
 
 func makeDirectory(path string) error {
@@ -91,7 +91,7 @@ func applySetterAndWriteFile (path string, append *os.File, setters map[string]s
 	append.Write([]byte("\n\n---\n\n"))
 }
 
-func (s *UpfNadGen) writeNadInfo(path string, srcPath string, nadName string, namespace string, interfaceType string) error {
+func (s *UpfNadGen) writeNadInfo(path string, nadName string, namespace string, interfaceType string) error {
     //var setters map[string]string = make(map[string]string)
     var cni, master, gw string
     switch interfaceType {
@@ -133,7 +133,7 @@ func (s *UpfNadGen) writeNadInfo(path string, srcPath string, nadName string, na
     return err
 }
 
-func (gen *UpfNadGen) createDirs(basePath string, srcDir string, nadName string, namespace string) error {
+func (gen *UpfNadGen) createDirs(basePath string, nadName string, namespace string) error {
     if err := makeDirectory(basePath); err != nil {
         log.Println("Failed to make directory " + basePath + " : " + err.Error())
         return err
@@ -141,22 +141,22 @@ func (gen *UpfNadGen) createDirs(basePath string, srcDir string, nadName string,
 
     debug("gen is " + fmt.Sprintf("%v", gen))
     debug(fmt.Sprintf("n3 CNI is %s", gen.N3Cni))
-    if err := gen.writeNadInfo(basePath, srcDir, nadName, namespace, "n3"); err != nil {
+    if err := gen.writeNadInfo(basePath, nadName, namespace, "n3"); err != nil {
         log.Println("Failed to write N3 Nad info: " + err.Error())
         return err
     }
-    if err := gen.writeNadInfo(basePath, srcDir, nadName, namespace, "n4"); err != nil {
+    if err := gen.writeNadInfo(basePath, nadName, namespace, "n4"); err != nil {
         log.Println("Failed to write N3 Nad info: " + err.Error())
         return err
     }
-    if err := gen.writeNadInfo(basePath, srcDir, nadName, namespace, "n6"); err != nil {
+    if err := gen.writeNadInfo(basePath, nadName, namespace, "n6"); err != nil {
         log.Println("Failed to write N3 Nad info: " + err.Error())
         return err
     }
     return nil
 }
 
-func processUpfNadGen(node *yaml.RNode, destDir string, srcDir string) error {
+func processUpfNadGen(node *yaml.RNode, destDir string) error {
     upfnadgen := &UpfNadGen{}
     err := node.YNode().Decode(upfnadgen)
     if err != nil {
@@ -165,8 +165,8 @@ func processUpfNadGen(node *yaml.RNode, destDir string, srcDir string) error {
     nadName := node.GetName()
     namespace := node.GetNamespace()
     basePath := filepath.Join(destDir, nadName)
-    debug(fmt.Sprintf("nadName %s namespace %s basePath %s srcDir %s", nadName, namespace, basePath, srcDir))
-    if err := upfnadgen.createDirs(basePath, srcDir, nadName, namespace); err != nil {
+    debug(fmt.Sprintf("nadName %s namespace %s basePath %s", nadName, namespace, basePath))
+    if err := upfnadgen.createDirs(basePath, nadName, namespace); err != nil {
       log.Println("Failed to create and populate directories " + err.Error())
       return err
     }
@@ -204,7 +204,7 @@ func main() {
         return items, nil
       }
       for _, item := range(rets) {
-        err := processUpfNadGen(item, config.Data["destdir"], config.Data["srcdir"])
+        err := processUpfNadGen(item, config.Data["destdir"])
         if err != nil {
           log.Println("Failed to process UpfNadGen: " + err.Error())
           debug(fmt.Sprintf("Failed to process UpfNadGen: %s", err.Error()))
