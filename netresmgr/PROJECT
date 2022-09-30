@@ -1,0 +1,33 @@
+domain: nephio.io
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+projectName: netresmgr
+repo: nephio.io/code
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: nephio.io
+  group: resources
+  kind: NfNetworkResource
+  path: nephio.io/code/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: nephio.io
+  group: networkfunction
+  kind: UpfClass
+  path: nephio.io/code/apis/networkfunction/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: nephio.io
+  group: networkfunction
+  kind: Upf
+  path: nephio.io/code/apis/networkfunction/v1alpha1
+  version: v1alpha1
+version: "3"

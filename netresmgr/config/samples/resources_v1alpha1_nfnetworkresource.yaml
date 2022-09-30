@@ -1,0 +1,6 @@
+apiVersion: resources.nephio.io/v1alpha1
+kind: NfNetworkResource
+metadata:
+  name: nfnetworkresource-sample
+spec:
+  # TODO(user): Add fields here

@@ -1,0 +1,20 @@
+# permissions for end users to view nfnetworkresources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nfnetworkresource-viewer-role
+rules:
+- apiGroups:
+  - resources.nephio.io
+  resources:
+  - nfnetworkresources
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - resources.nephio.io
+  resources:
+  - nfnetworkresources/status
+  verbs:
+  - get
