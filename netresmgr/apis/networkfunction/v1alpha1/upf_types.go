@@ -37,7 +37,7 @@ type UpfN4 struct {
 }
 
 type N6Endpoint struct {
-	IpEndpoints []NfEndpoint `json:"ipendpoints"`
+	IpEndpoints NfEndpoint `json:"ipendpoints"`
 	// UE address pool
 	IpAddrPool string `json:"ipaddrpool"`
 }

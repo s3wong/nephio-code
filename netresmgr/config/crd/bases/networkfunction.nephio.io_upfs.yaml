@@ -82,19 +82,17 @@ spec:
                           description: UE address pool
                           type: string
                         ipendpoints:
-                          items:
-                            properties:
-                              gwv4addr:
+                          properties:
+                            gwv4addr:
+                              type: string
+                            ipv4Addr:
+                              items:
                                 type: string
-                              ipv4Addr:
-                                items:
-                                  type: string
-                                type: array
-                            required:
-                            - gwv4addr
-                            - ipv4Addr
-                            type: object
-                          type: array
+                              type: array
+                          required:
+                          - gwv4addr
+                          - ipv4Addr
+                          type: object
                       required:
                       - ipaddrpool
                       - ipendpoints

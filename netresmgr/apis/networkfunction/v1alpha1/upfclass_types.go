@@ -39,6 +39,7 @@ type UpfClassStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:path=upfclasses,scope=Cluster
 
 // UpfClass is the Schema for the upfclasses API
 type UpfClass struct {

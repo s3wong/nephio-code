@@ -13,7 +13,7 @@ spec:
     listKind: UpfClassList
     plural: upfclasses
     singular: upfclass
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
@@ -35,8 +35,6 @@ spec:
           spec:
             description: UpfClassSpec defines the desired state of UpfClass
             properties:
-              controller:
-                type: string
               dnn:
                 items:
                   type: string
@@ -44,9 +42,9 @@ spec:
               downlinkThroughput:
                 type: string
               uplinkThroughput:
+                description: Controller         string   `json:"controller"`
                 type: string
             required:
-            - controller
             - dnn
             - downlinkThroughput
             - uplinkThroughput

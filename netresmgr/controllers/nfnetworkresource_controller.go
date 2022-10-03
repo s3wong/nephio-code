@@ -25,12 +25,14 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	resourcesv1alpha1 "nephio.io/code/api/v1alpha1"
+	networkfunctionv1alpha1 "nephio.io/code/apis/networkfunction/v1alpha1"
 
 	porchv1alpha1 "github.com/GoogleContainerTools/kpt/porch/api/porch/v1alpha1"
 	"github.com/nephio-project/nephio-controller-poc/pkg/porch"
@@ -86,15 +88,11 @@ metadata:
   name: $UPF_INS_NAME
   namespace: $UPF_INS_NS
 spec:
-$UPF_N3_INTERFACES
-$UPF_N4_INTERFACES
-$UPF_N6_INTERFACES
+$UPF_INTERFACES
   capacity:
     downlinkThroughput: $UPF_DL_TP
     uplinkThroughput: $UPF_UL_TP
-  imagePaths:
-$UPF_IMAGE_PATHS`
-
+  imagePaths: `
 
 func (r *NfNetworkResourceReconciler) clonePackage(ctx context.Context, packageName string) (*porchv1alpha1.PackageRevision, error) {
 	ns := "default"
@@ -205,64 +203,112 @@ func (r *NfNetworkResourceReconciler) createUpfNadPackage(ctx context.Context, n
 	return nil
 }
 
-func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context, name string, namespace string) error {
-    upf := &resourcesv1alpha1.Upf{}
+func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context, name string, namespace string, newPR *porchv1alpha1.PackageRevision) error {
+	upf := &networkfunctionv1alpha1.Upf{}
 
-    if err:= r.Client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, upf); err == nil {
-        fmt.Printf("Error: failed to get upf %s: %v\n", name, err.Errors())
-        return err
-    }
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, upf); err == nil {
+		fmt.Printf("Error: failed to get upf %s: %v\n", name, err.Error())
+		return err
+	}
 
-    upfSpec := upf.Spec
-    upfClassName := upfSpec.UpfClassName
+	upfSpec := upf.Spec
+	upfClassName := upfSpec.UpfClassName
 
-    upfClass := &resourcesv1alpha1.UpfClass{}
+	upfClass := &networkfunctionv1alpha1.UpfClass{}
 
-    if err := r.Client.Get(ctx, types.NamespacedName{Name: upfClassName, Namespace: namespace}, upfClass); err == nil {
-        fmt.Printf("Error: failed to get upfClass %s: %v\n", upfClassName, err.Errors())
-        return err
-    }
+	if err := r.Client.Get(ctx, client.ObjectKey{Name: upfClassName}, upfClass); err == nil {
+		fmt.Printf("Error: failed to get upfClass %s: %v\n", upfClassName, err.Error())
+		return err
+	}
 
-    // TODO(user): assuming just one network interface for each of N3/4/6
-    // Note: the interface name needs to be short --- Linux does not support long intf name
-    // build N3
-    var interfaces = [3]string{"n3", "n4", "n6"}
-    var interfaceName, intfKey string
-    var nx *[]NfEndpoint
-    for _, intf := range interfaces {
-        intfKey = ""
-        switch intf {
-        case "n3":
-            nx = upfSpec.N3.Endpoints
-            interfaceName = "n3-"
-            intfKey = `  n3Interfaces:`
-        case "n4":
-            nx = upfSpec.N4
-            interfaceName = "n4-"
-            intfKey = `  n4Interfaces:`
-        case "n6":
-            nx = upfSpec.N6
-            interfaceName = "n6-"
-            intfKey = `  n6Interfaces:`
-        default:
-            // do nothing
-        }
-        if intf == "n6" {
-            for idx, ep := range nx.
-        for idx, ep := range nx.Endpoints {
-            item := fmt.Sprintf(`
+	resources, err := r.loadResourceList(ctx, newPR)
+	if err != nil {
+		return err
+	}
+
+	var pkgBuf *kio.PackageBuffer
+	if pkgBuf, err = porch.ResourcesToPackageBuffer(resources.Spec.Resources); err != nil {
+		return err
+	}
+
+	upfDeploy := strings.Clone(UpfDeployCfg)
+	upfDeploy = strings.Replace(upfDeploy, " $UPF_INS_NAME", name, 1)
+	upfDeploy = strings.Replace(upfDeploy, " $UPF_INS_NS", namespace, 1)
+	// TODO(user): assuming just one network interface for each of N3/4/6
+	// Note: the interface name needs to be short --- Linux does not support long intf name
+	// build N3
+	var interfaces = [3]string{"n3", "n4", "n6"}
+	var interfaceBlock, interfaceName, intfKey string
+	var nx *[]networkfunctionv1alpha1.NfEndpoint
+	for _, intf := range interfaces {
+		intfKey = ""
+		switch intf {
+		case "n3":
+			nx = &upfSpec.N3.Endpoints
+			interfaceName = "n3-"
+			intfKey = `  n3Interfaces:`
+		case "n4":
+			nx = &upfSpec.N4.Endpoints
+			interfaceName = "n4-"
+			intfKey = `  n4Interfaces:`
+		case "n6":
+			interfaceName = "n6-"
+			intfKey = `  n6Interfaces:`
+		default:
+			// do nothing
+		}
+		if intf == "n6" {
+			idx := 1
+			for key, ep := range upfSpec.N6.Endpoints {
+				item := fmt.Sprintf(`
+  - dnn: %s
+    interface:
+      name: %s
+      ipAddr:
+        - %s
+      gwAddr:
+       - %s
+    ipAddrPool: %s`, key, interfaceName+fmt.Sprintf("%d", idx), ep.IpEndpoints.Ipv4Addr[0], ep.IpEndpoints.Gwv4Addr, ep.IpAddrPool)
+				idx += 1
+				intfKey = intfKey + item
+			}
+			interfaceBlock += intfKey
+		} else { // n3 or n4
+			for idx, ep := range *nx {
+				item := fmt.Sprintf(`
   -name: %s%d
    gwAddr:
    - %s
    ipAddr:
-   - %s`, idx, ep.Gwv4Addr, ep.Ipv4Addr[0])
-            intfKey = intfKey + item
-        }
-    }
+   - %s`, interfaceName, idx, ep.Gwv4Addr, ep.Ipv4Addr[0])
+				intfKey = intfKey + item
+			}
+			interfaceBlock += intfKey
+		}
+	}
+	upfDeploy = strings.Replace(upfDeploy, "$UPF_INTERFACES", interfaceBlock, 1)
+	upfDeploy = strings.Replace(upfDeploy, "$UPF_DL_TP", upfClass.Spec.DownlinkThroughput, 1)
+	upfDeploy = strings.Replace(upfDeploy, "$UPF_UL_TP", upfClass.Spec.UplinkThroughput, 1)
 
-    return nil
+	obj, err := yaml.Parse(upfDeploy)
+	if err != nil {
+		fmt.Printf("Error parsing UPF deploy string to yaml: %v\n", err.Error())
+		return err
+	}
+
+	pkgBuf.Nodes = append(pkgBuf.Nodes, obj)
+
+	if newResources, err := porch.CreateUpdatedResources(resources.Spec.Resources, pkgBuf); err != nil {
+		return nil
+	} else {
+		resources.Spec.Resources = newResources
+		if err = r.PorchClient.Update(context.TODO(), resources); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
-
 
 //+kubebuilder:rbac:groups=resources.nephio.io,resources=nfnetworkresources,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=resources.nephio.io,resources=nfnetworkresources/status,verbs=get;update;patch
@@ -303,6 +349,15 @@ func (r *NfNetworkResourceReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	if err = r.createUpfNadPackage(ctx, name, namespace, &upfNad, newPR); err != nil {
+		return reconcile.Result{}, err
+	}
+
+	newPR, err = r.clonePackage(ctx, name)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	if err = r.generateUpfDeployment(ctx, name, namespace, newPR); err != nil {
 		return reconcile.Result{}, err
 	}
 
