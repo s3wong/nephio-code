@@ -121,12 +121,15 @@ spec:
                 required:
                 - endpoints
                 type: object
+              namespace:
+                type: string
               parent:
                 type: string
             required:
             - n3
             - n4
             - n6
+            - namespace
             - parent
             type: object
           status:

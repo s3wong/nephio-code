@@ -82,17 +82,18 @@ spec:
       ]
     }'`
 
+// TODO(user): hardcoded image path, should retrieve from package
 var UpfDeployCfg string = `apiVersion: nfdeploy.nephio.io/v1alpha1
 kind: UpfDeploy
 metadata:
   name: $UPF_INS_NAME
   namespace: $UPF_INS_NS
-spec:
-$UPF_INTERFACES
+spec:$UPF_INTERFACES
   capacity:
     downlinkThroughput: $UPF_DL_TP
     uplinkThroughput: $UPF_UL_TP
-  imagePaths: `
+  imagePaths:
+    upf: towards5gs/free5gc-upf:v3.1.1`
 
 func (r *NfNetworkResourceReconciler) clonePackage(ctx context.Context, packageName string) (*porchv1alpha1.PackageRevision, error) {
 	ns := "default"
@@ -203,10 +204,10 @@ func (r *NfNetworkResourceReconciler) createUpfNadPackage(ctx context.Context, n
 	return nil
 }
 
-func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context, name string, namespace string, newPR *porchv1alpha1.PackageRevision) error {
+func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context, resourceNamespace string, name string, namespace string, newPR *porchv1alpha1.PackageRevision) error {
 	upf := &networkfunctionv1alpha1.Upf{}
 
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, upf); err == nil {
+	if err := r.Client.Get(ctx, types.NamespacedName{Name: name, Namespace: resourceNamespace}, upf); err != nil {
 		fmt.Printf("Error: failed to get upf %s: %v\n", name, err.Error())
 		return err
 	}
@@ -216,7 +217,7 @@ func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context,
 
 	upfClass := &networkfunctionv1alpha1.UpfClass{}
 
-	if err := r.Client.Get(ctx, client.ObjectKey{Name: upfClassName}, upfClass); err == nil {
+	if err := r.Client.Get(ctx, client.ObjectKey{Name: upfClassName}, upfClass); err != nil {
 		fmt.Printf("Error: failed to get upfClass %s: %v\n", upfClassName, err.Error())
 		return err
 	}
@@ -232,8 +233,8 @@ func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context,
 	}
 
 	upfDeploy := strings.Clone(UpfDeployCfg)
-	upfDeploy = strings.Replace(upfDeploy, " $UPF_INS_NAME", name, 1)
-	upfDeploy = strings.Replace(upfDeploy, " $UPF_INS_NS", namespace, 1)
+	upfDeploy = strings.Replace(upfDeploy, "$UPF_INS_NAME", name, 1)
+	upfDeploy = strings.Replace(upfDeploy, "$UPF_INS_NS", namespace, 1)
 	// TODO(user): assuming just one network interface for each of N3/4/6
 	// Note: the interface name needs to be short --- Linux does not support long intf name
 	// build N3
@@ -246,14 +247,17 @@ func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context,
 		case "n3":
 			nx = &upfSpec.N3.Endpoints
 			interfaceName = "n3-"
-			intfKey = `  n3Interfaces:`
+			intfKey = `
+  n3Interfaces:`
 		case "n4":
 			nx = &upfSpec.N4.Endpoints
 			interfaceName = "n4-"
-			intfKey = `  n4Interfaces:`
+			intfKey = `
+  n4Interfaces:`
 		case "n6":
 			interfaceName = "n6-"
-			intfKey = `  n6Interfaces:`
+			intfKey = `
+  n6Interfaces:`
 		default:
 			// do nothing
 		}
@@ -267,7 +271,7 @@ func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context,
       ipAddr:
         - %s
       gwAddr:
-       - %s
+        - %s
     ipAddrPool: %s`, key, interfaceName+fmt.Sprintf("%d", idx), ep.IpEndpoints.Ipv4Addr[0], ep.IpEndpoints.Gwv4Addr, ep.IpAddrPool)
 				idx += 1
 				intfKey = intfKey + item
@@ -276,11 +280,11 @@ func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context,
 		} else { // n3 or n4
 			for idx, ep := range *nx {
 				item := fmt.Sprintf(`
-  -name: %s%d
-   gwAddr:
-   - %s
-   ipAddr:
-   - %s`, interfaceName, idx, ep.Gwv4Addr, ep.Ipv4Addr[0])
+  - name: %s%d
+    gwAddr:
+    - %s
+    ipAddr:
+    - %s`, interfaceName, idx, ep.Gwv4Addr, ep.Ipv4Addr[0])
 				intfKey = intfKey + item
 			}
 			interfaceBlock += intfKey
@@ -289,6 +293,8 @@ func (r *NfNetworkResourceReconciler) generateUpfDeployment(ctx context.Context,
 	upfDeploy = strings.Replace(upfDeploy, "$UPF_INTERFACES", interfaceBlock, 1)
 	upfDeploy = strings.Replace(upfDeploy, "$UPF_DL_TP", upfClass.Spec.DownlinkThroughput, 1)
 	upfDeploy = strings.Replace(upfDeploy, "$UPF_UL_TP", upfClass.Spec.UplinkThroughput, 1)
+
+	fmt.Printf("upfDeploy is \n%v\n", upfDeploy)
 
 	obj, err := yaml.Parse(upfDeploy)
 	if err != nil {
@@ -342,8 +348,9 @@ func (r *NfNetworkResourceReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	spec := nfResource.Spec
 	namespace := spec.Namespace
 	upfNad := spec.UpfNad
+	resourceNamespace := nfResource.ObjectMeta.Namespace
 
-	newPR, err := r.clonePackage(ctx, name)
+	newPR, err := r.clonePackage(ctx, name+"-nad")
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -352,12 +359,12 @@ func (r *NfNetworkResourceReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
-	newPR, err = r.clonePackage(ctx, name)
+	secondPR, err := r.clonePackage(ctx, name+"-upf")
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err = r.generateUpfDeployment(ctx, name, namespace, newPR); err != nil {
+	if err = r.generateUpfDeployment(ctx, resourceNamespace, name, namespace, secondPR); err != nil {
 		return reconcile.Result{}, err
 	}
 

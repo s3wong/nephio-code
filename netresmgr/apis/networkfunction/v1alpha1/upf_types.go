@@ -54,6 +54,7 @@ type UpfN9 struct {
 // UpfSpec defines the desired state of Upf
 type UpfSpec struct {
 	UpfClassName string `json:"parent"`
+	Namespace    string `json:"namespace"`
 	N3           UpfN3  `json:"n3"`
 	N4           UpfN4  `json:"n4"`
 	N6           UpfN6  `json:"n6"`
