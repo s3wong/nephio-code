@@ -164,7 +164,8 @@ func (r *NfDeploymentReconciler) handleNfDeploySites(ctx context.Context, nfDepl
 		return err
 	}
 
-	catalogRepo := repos.Spec.CatalogRepo
+	//catalogRepo := repos.Spec.CatalogRepo
+	mgmtRepo := repos.Spec.MgmtRepo
 	catalogBasePkgs := repos.Spec.CatalogBasePkgs
 
 	for _, site := range spec.Sites {
@@ -176,14 +177,14 @@ func (r *NfDeploymentReconciler) handleNfDeploySites(ctx context.Context, nfDepl
 		// TODO(user): check if such package exists
 		srcPkgName := catalogBasePkgs[srcPkgKey]
 		fmt.Printf("src pkg name for %s is %s\n", srcPkgKey, srcPkgName)
-		if _, err := porchutil.ClonePackage(ctx, r.PorchClient, srcPkgName, newPkgName, catalogRepo, objNamespace); err != nil {
+		if _, err := porchutil.ClonePackage(ctx, r.PorchClient, srcPkgName, newPkgName, mgmtRepo, objNamespace); err != nil {
 			return err
 		}
 		newPkgName = site.Id + "-" + site.NfKind
 		srcPkgKey = "nephio-" + site.NfKind + "-common"
 		srcPkgName = catalogBasePkgs[srcPkgKey]
 		fmt.Printf("src pkg name for %s is %s\n", srcPkgKey, srcPkgName)
-		if newPR, err := porchutil.ClonePackage(ctx, r.PorchClient, srcPkgName, newPkgName, catalogRepo, objNamespace); err != nil {
+		if newPR, err := porchutil.ClonePackage(ctx, r.PorchClient, srcPkgName, newPkgName, mgmtRepo, objNamespace); err != nil {
 			return err
 		} else {
 			if err := r.processNfCommonPkg(ctx, site.Id, site.NfClassName, site.NfKind, objNamespace,

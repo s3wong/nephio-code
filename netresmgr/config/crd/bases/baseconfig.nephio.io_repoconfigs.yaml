@@ -49,11 +49,14 @@ spec:
                 additionalProperties:
                   type: string
                 type: object
+              mgmtrepo:
+                type: string
             required:
             - catalogbasepkgs
             - catalogrepo
             - deploybasepkgs
             - deployrepos
+            - mgmtrepo
             type: object
           status:
             description: RepoConfigStatus defines the observed state of RepoConfig

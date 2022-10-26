@@ -26,6 +26,7 @@ import (
 // RepoConfigSpec defines the desired state of RepoConfig
 type RepoConfigSpec struct {
 	CatalogRepo     string            `json:"catalogrepo"`
+	MgmtRepo        string            `json:"mgmtrepo"`
 	DeployRepos     map[string]string `json:"deployrepos"`
 	CatalogBasePkgs map[string]string `json:"catalogbasepkgs"`
 	DeployBasePkgs  map[string]string `json:"deploybasepkgs"`
