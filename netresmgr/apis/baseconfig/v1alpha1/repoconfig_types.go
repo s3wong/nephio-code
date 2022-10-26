@@ -23,47 +23,42 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// UpfClassSpec defines the desired state of UpfClass
-type UpfClassSpec struct {
-	//Controller         string   `json:"controller"`
-	UplinkThroughput   string `json:"uplinkThroughput"`
-	DownlinkThroughput string `json:"downlinkThroughput"`
-	N3Endpoints        int    `json:"n3endpoints"`
-	N4Endpoints        int    `json:"n4endpoints"`
-	N6Endpoints        int    `json:"n6endpoints"`
-	N9Endpoints        int    `json:"n9endpoints"`
-	// +optional
-	Dnn []string `json:"dnn"`
+// RepoConfigSpec defines the desired state of RepoConfig
+type RepoConfigSpec struct {
+	CatalogRepo     string            `json:"catalogrepo"`
+	DeployRepos     map[string]string `json:"deployrepos"`
+	CatalogBasePkgs map[string]string `json:"catalogbasepkgs"`
+	DeployBasePkgs  map[string]string `json:"deploybasepkgs"`
 }
 
-// UpfClassStatus defines the observed state of UpfClass
-type UpfClassStatus struct {
+// RepoConfigStatus defines the observed state of RepoConfig
+type RepoConfigStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:path=upfclasses,scope=Cluster
+//+kubebuilder:resource:path=repoconfigs,scope=Cluster
 
-// UpfClass is the Schema for the upfclasses API
-type UpfClass struct {
+// RepoConfig is the Schema for the repoconfigs API
+type RepoConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   UpfClassSpec   `json:"spec,omitempty"`
-	Status UpfClassStatus `json:"status,omitempty"`
+	Spec   RepoConfigSpec   `json:"spec,omitempty"`
+	Status RepoConfigStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// UpfClassList contains a list of UpfClass
-type UpfClassList struct {
+// RepoConfigList contains a list of RepoConfig
+type RepoConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []UpfClass `json:"items"`
+	Items           []RepoConfig `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&UpfClass{}, &UpfClassList{})
+	SchemeBuilder.Register(&RepoConfig{}, &RepoConfigList{})
 }

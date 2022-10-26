@@ -30,4 +30,21 @@ resources:
   kind: Upf
   path: nephio.io/code/apis/networkfunction/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: nephio.io
+  group: networkfunction
+  kind: NfDeployment
+  path: nephio.io/code/apis/networkfunction/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: nephio.io
+  group: baseconfig
+  kind: RepoConfig
+  path: nephio.io/code/apis/baseconfig/v1alpha1
+  version: v1alpha1
 version: "3"

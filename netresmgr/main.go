@@ -34,8 +34,10 @@ import (
 	"github.com/nephio-project/nephio-controller-poc/pkg/porch"
 
 	resourcesv1alpha1 "nephio.io/code/api/v1alpha1"
+	baseconfigv1alpha1 "nephio.io/code/apis/baseconfig/v1alpha1"
 	networkfunctionv1alpha1 "nephio.io/code/apis/networkfunction/v1alpha1"
 	"nephio.io/code/controllers"
+	networkfunctioncontrollers "nephio.io/code/controllers/networkfunction"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -49,6 +51,7 @@ func init() {
 
 	utilruntime.Must(resourcesv1alpha1.AddToScheme(scheme))
 	utilruntime.Must(networkfunctionv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(baseconfigv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -105,6 +108,14 @@ func main() {
 		PorchClient: porchClient,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NfNetworkResource")
+		os.Exit(1)
+	}
+	if err = (&networkfunctioncontrollers.NfDeploymentReconciler{
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		PorchClient: porchClient,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "NfDeployment")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

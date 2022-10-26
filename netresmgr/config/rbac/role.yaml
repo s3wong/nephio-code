@@ -6,6 +6,32 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - networkfunction.nephio.io
+  resources:
+  - nfdeployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networkfunction.nephio.io
+  resources:
+  - nfdeployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - networkfunction.nephio.io
+  resources:
+  - nfdeployments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - resources.nephio.io
   resources:
   - nfnetworkresources
