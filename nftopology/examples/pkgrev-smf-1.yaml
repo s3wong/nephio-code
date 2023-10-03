@@ -1,0 +1,16 @@
+#apiVersion: porch.kpt.dev/v1alpha1
+apiVersion: porch.s3wong.io/v1alpha1
+kind: PackageRevision
+metadata:
+  name: smf-free5gc-large
+  namespace: nf-test
+  labels:
+    region: us-west-1
+    nftopology: topology-123
+    nftopology-namespace: nf-test
+    nfinstance: free5gc-smf-1
+spec:
+  packageName: smf-free5gc-large
+  revision: 3-1-1
+  repository: aggregation-cluster
+  lifecycle: "Published"

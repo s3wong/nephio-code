@@ -1,0 +1,66 @@
+apiVersion: req.nephio.org/v1alpha1
+kind: NFTopology
+metadata:
+  name: topology-123
+  namespace: nf-test
+spec:
+  nfInstances:
+  - name: free5gc-smf-1
+    clusterSelector:
+      matchLabels:
+        region: us-west-1
+        cluster: aggregation
+    nfTemplate:
+      nfType: "smf"
+      capacity:
+        maxDownlinkThroughput: 100
+        maxUplinkThroughput: 10
+        maxNFConnections: 50
+        maxSessions: 1000000
+        maxSubscribers: 100000
+      className: smf-class-1
+      nfAttachments:
+      - name: n4
+        networkInstanceName: us-west-network-1
+  - name: free5gc-upf-1
+    clusterSelector:
+      matchLabels:
+        region: us-west-1
+        cluster: edge-1
+    nfTemplate:
+      nfType: "upf"
+      capacity:
+        maxDownlinkThroughput: 100
+        maxUplinkThroughput: 10
+        maxNFConnections: 50
+        maxSessions: 1000000
+        maxSubscribers: 100000
+      className: upf-class-1
+      nfAttachments:
+      - name: n3
+        networkInstanceName: us-west-ran-core-network-1
+      - name: n4
+        networkInstanceName: us-west-network-1
+      - name: n6
+        networkInstanceName: us-west-data-network-1
+  - name: free5gc-upf-2
+    clusterSelector:
+      matchLabels:
+        region: us-west-1
+        cluster: edge-2
+    nfTemplate:
+      nfType: "upf"
+      capacity:
+        maxDownlinkThroughput: 100
+        maxUplinkThroughput: 10
+        maxNFConnections: 50
+        maxSessions: 1000000
+        maxSubscribers: 100000
+      className: upf-class-1
+      nfAttachments:
+      - name: n3
+        networkInstanceName: us-west-ran-core-network-2
+      - name: n4
+        networkInstanceName: us-west-network-1
+      - name: n6
+        networkInstanceName: us-west-data-network-2

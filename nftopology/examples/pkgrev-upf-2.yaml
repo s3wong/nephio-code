@@ -1,0 +1,16 @@
+#apiVersion: porch.kpt.dev/v1alpha1
+apiVersion: porch.s3wong.io/v1alpha1
+kind: PackageRevision
+metadata:
+  name: upf-free5gc-medium-2
+  namespace: nf-test
+  labels:
+    region: us-west-1
+    nftopology: topology-123
+    nftopology-namespace: nf-test
+    nfinstance: free5gc-upf-2
+spec:
+  packageName: upf-free5gc-medium
+  revision: 3-1-1
+  repository: us-west-edge-2
+  lifecycle: "Published"

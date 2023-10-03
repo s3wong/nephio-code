@@ -1,0 +1,26 @@
+apiVersion: req.nephio.org/v1alpha1
+kind: NFClass
+metadata:
+  name: smf-class-1
+spec:
+  vendor: free5gc
+  version: 3.1.1
+  packageRef:
+    namespace: dummy
+    repository: edge-1
+    packageName: free5gc-smf-3.1.1-large
+    revision: blah
+
+---
+apiVersion: req.nephio.org/v1alpha1
+kind: NFClass
+metadata:
+  name: upf-class-1
+spec:
+  vendor: free5gc
+  version: 3.1.1
+  packageRef:
+    namespace: dummy
+    repository: edge-1
+    packageName: free5gc-upf-3.1.1-medium
+    revision: blah
