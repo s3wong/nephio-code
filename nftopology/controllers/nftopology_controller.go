@@ -35,7 +35,7 @@ import (
 )
 
 const (
-	FREE5GC            string = "free5gc"
+	//FREE5GC            string = "free5gc"
 	WORKLOADAPIVERSION string = "infra.nephio.org/v1alpha1"
 	WORKLOADKIND       string = "WorkloadCluster"
 )
@@ -144,6 +144,7 @@ func (r *NFTopologyReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			r.l.Error(err, fmt.Sprintf("NFClass object not found: %s: %s\n", className, err.Error()))
 			return ctrl.Result{}, err
 		}
+        /*
 		// TODO(s3wong): turn the following into a configurable policy
 		if nfClass.Spec.Vendor == FREE5GC && nfInst.NFTemplate.NFType == reqv1alpha1.NFTypeSMF {
 			r.l.Info(fmt.Sprintf("NF instance free5gc %s is a SMF, checking all connected UPF deployed\n", nfInst.Name))
@@ -153,6 +154,7 @@ func (r *NFTopologyReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 				continue
 			}
 		}
+        */
 
 		pvs := BuildPVS(&nfInst, nfClass)
 		r.l.Info(fmt.Sprintf("PVS for NF inst %s is %+v\n\n\n", nfInst.Name, pvs))
