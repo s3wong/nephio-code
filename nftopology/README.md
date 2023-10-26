@@ -126,6 +126,8 @@ NFTopology CR has capacity input which needs to be passed through PVS to the act
 
 NTC will also need to associate all the to-be-fan'ed-out packages with this deployment. In PVS, this is allowed as a set of labels to be passed to PVS controller, which will then propagate those labels to PackageVariant (PV) CRs, and subsequently the PackageRevision (PR) CRs. NTC will then watch for all the PR resources created, and associated them with which NFTopology specification via these labels.
 
+NTC also adds a label to each of the associated PVCs for connectivity association. This will lead to each resulting PackageRevision to also carry these labels.
+
 
 ## Tracking Packages
 NTC will embed a label 'nf-deployment-name', which is set to NFToplogy CR's own name; PackageVariantSet and PackageVariant controllers will propagate this label to all the PackageRevision resources associated with the "fan-out"ed packages.
