@@ -35,7 +35,6 @@ import (
 )
 
 const (
-	//FREE5GC            string = "free5gc"
 	WORKLOADAPIVERSION string = "infra.nephio.org/v1alpha1"
 	WORKLOADKIND       string = "WorkloadCluster"
 )
@@ -47,55 +46,24 @@ type NFTopologyReconciler struct {
 	l      logr.Logger
 }
 
-func AllUPFsDeployed(neighborMap map[string][]reqv1alpha1.NFInstance, nfInst *reqv1alpha1.NFInstance, nfDeployed *deployv1alpha1.NFDeployed, deployedInstMap map[string]int) bool {
-
-	expected := 0
-	count := 0
-	if neighborList, ok := neighborMap[nfInst.Name]; !ok {
-		return false
-	} else {
-		// create a map for fast lookup
-		neighborLookupMap := map[string]struct{}{}
-		for _, neighbor := range neighborList {
-			if neighbor.NFTemplate.NFType == reqv1alpha1.NFTypeUPF {
-				neighborLookupMap[neighbor.Name] = struct{}{}
-				expected++
-			}
-		}
-
-		for neighborInstName, idx := range deployedInstMap {
-			if _, ok := neighborLookupMap[GetNFInstanceNameFromNFDeployedName(neighborInstName)]; ok {
-				if nfDeployed.Spec.NFInstances[idx].NFType == string(reqv1alpha1.NFTypeUPF) {
-					count++
-				}
-			}
-		}
-	}
-
-	if expected == count {
-		return true
-	} else {
-		return false
-	}
-}
-
 /*
  * BuildPVS: builds a PVS object from NFTopology's NFInstance
  * NFClass needed for package reference
  */
-func BuildPVS(nfInst *reqv1alpha1.NFInstance, nfClassObj *reqv1alpha1.NFClass) *pvsv1alpha2.PackageVariantSet {
+func BuildPVS(nfInst *reqv1alpha1.NFInstance, packageRef *reqv1alpha1.PackageRevisionReference) *pvsv1alpha2.PackageVariantSet {
 	retPVS := &pvsv1alpha2.PackageVariantSet{}
 
 	retPVS.ObjectMeta.Name = nfInst.Name
 	upstream := &pvv1alpha1.Upstream{}
-	upstream.Repo = nfClassObj.Spec.PackageRef.RepositoryName
-	upstream.Package = nfClassObj.Spec.PackageRef.PackageName
-	upstream.Revision = nfClassObj.Spec.PackageRef.Revision
+	upstream.Repo = packageRef.RepositoryName
+	upstream.Package = packageRef.PackageName
+	upstream.Revision = packageRef.Revision
 
 	retPVS.Spec.Upstream = upstream
 
 	target := &pvsv1alpha2.Target{}
 	objectSelector := &pvsv1alpha2.ObjectSelector{}
+    template := &pvsv1alpha2.PackageVariantTemplate{}
 
 	labelMap := map[string]string{}
 	for k, v := range nfInst.ClusterSelector.MatchLabels {
@@ -107,9 +75,39 @@ func BuildPVS(nfInst *reqv1alpha1.NFInstance, nfClassObj *reqv1alpha1.NFClass) *
 	objectSelector.Kind = WORKLOADKIND
 	target.ObjectSelector = objectSelector
 
+    template.Annotations = map[string]string{"approval.nephio.org/policy" : "initial"}
+
+    pipeline := &pvsv1alpha2.PipelineTemplate{}
+
+    mutator := &pvsv1alpha2.FunctionTemplate{}
+    mutator.Image = "gcr.io/kpt-fn/search-replace:v0.2.0"
+    mutator.ConfigMap = map[string]string{
+        "by-path": "spec.maxUplinkThroughput",
+        "by-file-path": "**/capacity.yaml",
+        "put-value": nfInst.NFTemplate.Capacity.Spec.MaxUplinkThroughput
+    }
+    pipeline.Mutators = append(pipeline.Mutators, mutator)
+
+    mutator := &pvsv1alpha2.FunctionTemplate{}
+    mutator.Image = "gcr.io/kpt-fn/search-replace:v0.2.0"
+    mutator.ConfigMap = map[string]string{
+        "by-path": "spec.maxDownlinkThroughput",
+        "by-file-path": "**/capacity.yaml",
+        "put-value": nfInst.NFTemplate.Capacity.Spec.MaxDownlinkThroughput
+    }
+    pipeline.Mutators = append(pipeline.Mutators, mutator)
+
+    mutator := &pvsv1alpha2.FunctionTemplate{}
+    mutator.Image = "gcr.io/kpt-fn/search-replace:v0.2.0"
+    mutator.ConfigMap = map[string]string{
+        "by-path": "spec.maxSessions",
+        "by-file-path": "**/capacity.yaml",
+        "put-value": nfInst.NFTemplate.Capacity.Spec.MaxSessions
+    }
+    pipeline.Mutators = append(pipeline.Mutators, mutator)
+
 	retPVS.Spec.Targets = append(retPVS.Spec.Targets, *target)
 
-	// TODO(s3wong): adding Template in PVS?
 	return retPVS
 }
 
@@ -138,25 +136,9 @@ func (r *NFTopologyReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	continueReconciling := false
 	for _, nfInst := range nfTopo.Spec.NFInstances {
 
-		className := nfInst.NFTemplate.ClassName
-		nfClass := &reqv1alpha1.NFClass{}
-		if err := r.Client.Get(ctx, client.ObjectKey{Name: className}, nfClass); err != nil {
-			r.l.Error(err, fmt.Sprintf("NFClass object not found: %s: %s\n", className, err.Error()))
-			return ctrl.Result{}, err
-		}
-        /*
-		// TODO(s3wong): turn the following into a configurable policy
-		if nfClass.Spec.Vendor == FREE5GC && nfInst.NFTemplate.NFType == reqv1alpha1.NFTypeSMF {
-			r.l.Info(fmt.Sprintf("NF instance free5gc %s is a SMF, checking all connected UPF deployed\n", nfInst.Name))
-			if !AllUPFsDeployed(neighborMap, &nfInst, nfDeployed, deployedInstanceMap) {
-				continueReconciling = true
-				// skip this SMF
-				continue
-			}
-		}
-        */
+		packageRef := &nfInst.NFTemplate.NFPackageRef
 
-		pvs := BuildPVS(&nfInst, nfClass)
+		pvs := BuildPVS(&nfInst, packageRef)
 		r.l.Info(fmt.Sprintf("PVS for NF inst %s is %+v\n\n\n", nfInst.Name, pvs))
 		if err := r.Client.Create(ctx, pvs); err != nil {
 			r.l.Error(err, fmt.Sprintf("Failed to create PVS %s: %s\n", nfInst.Name, err.Error()))
@@ -168,11 +150,7 @@ func (r *NFTopologyReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		}
 	}
 
-	if continueReconciling {
-		return ctrl.Result{}, errors.New("Waiting for all UPF packages to be deployed before SMF")
-	} else {
-		return ctrl.Result{}, nil
-	}
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

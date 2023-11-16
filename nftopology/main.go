@@ -33,10 +33,9 @@ import (
 	runscheme "sigs.k8s.io/controller-runtime/pkg/scheme"
 
 	porchv1alpha1 "github.com/GoogleContainerTools/kpt/porch/api/porch/v1alpha1"
-	nfdeployv1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
-	//nfreqv1alpha1 "github.com/s3wong/api/nf_requirements/v1alpha1"
+	nfreqv1alpha1 "github.com/s3wong/api/nf_requirements/v1alpha1"
 	//porchv1alpha1 "github.com/s3wong/porchapi/api/v1alpha1"
-	nfreqv1alpha1 "github.com/nephio-project/api/nf_requirements/v1alpha1"
+	//nfreqv1alpha1 "github.com/nephio-project/api/nf_requirements/v1alpha1"
 	//porchv1alpha1 "github.com/s3wong/porchapi/api/v1alpha1"
 
 	"github.com/s3wong/nftopology/controllers"
@@ -103,13 +102,6 @@ func main() {
 	schemeBuilder.Register(&nfreqv1alpha1.NFClass{}, &nfreqv1alpha1.NFClassList{})
 	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
 		setupLog.Error(err, "Unable to register NFTopology and NFClass kinds")
-		os.Exit(1)
-	}
-
-	schemeBuilder = &runscheme.Builder{GroupVersion: nfdeployv1alpha1.GroupVersion}
-	schemeBuilder.Register(&nfdeployv1alpha1.NFDeployed{}, &nfdeployv1alpha1.NFDeployedList{})
-	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
-		setupLog.Error(err, "Unable to register NFDeployed kind")
 		os.Exit(1)
 	}
 
