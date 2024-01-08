@@ -59,7 +59,11 @@ func newNFTopology(name string, namespace string) *nfreqv1alpha1.NFTopology {
 		},
 		NFTemplate: nfreqv1alpha1.NFTemplate{
 			NFType:    nfreqv1alpha1.NFTypeSMF,
-			ClassName: "smf-class-1",
+            NFPackageRef: nfreqv1alpha1.PackageRevisionReference{
+                RepositoryName: "github.com/sample-repo",
+                PackageName: "mysmfpackage",
+                Revision: "version-1",
+            },
 			Capacity: nfreqv1alpha1.CapacitySpec{
 				MaxSessions:      1000000,
 				MaxNFConnections: 1000,
@@ -83,7 +87,11 @@ func newNFTopology(name string, namespace string) *nfreqv1alpha1.NFTopology {
 		},
 		NFTemplate: nfreqv1alpha1.NFTemplate{
 			NFType:    nfreqv1alpha1.NFTypeUPF,
-			ClassName: "upf-class-1",
+            NFPackageRef: nfreqv1alpha1.PackageRevisionReference{
+                RepositoryName: "github.com/sample-repo",
+                PackageName: "myupfpackage",
+                Revision: "version-1",
+            },
 			Capacity: nfreqv1alpha1.CapacitySpec{
 				MaxUplinkThroughput:   resource.MustParse("1G"),
 				MaxDownlinkThroughput: resource.MustParse("10G"),
@@ -115,7 +123,11 @@ func newNFTopology(name string, namespace string) *nfreqv1alpha1.NFTopology {
 		},
 		NFTemplate: nfreqv1alpha1.NFTemplate{
 			NFType:    nfreqv1alpha1.NFTypeUPF,
-			ClassName: "upf-class-1",
+            NFPackageRef: nfreqv1alpha1.PackageRevisionReference{
+                RepositoryName: "github.com/sample-repo",
+                PackageName: "myupfpackage",
+                Revision: "version-1",
+            },
 			Capacity: nfreqv1alpha1.CapacitySpec{
 				MaxUplinkThroughput:   resource.MustParse("1G"),
 				MaxDownlinkThroughput: resource.MustParse("5G"),
