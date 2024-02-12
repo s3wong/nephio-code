@@ -32,16 +32,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	runscheme "sigs.k8s.io/controller-runtime/pkg/scheme"
 
-	porchv1alpha1 "github.com/GoogleContainerTools/kpt/porch/api/porch/v1alpha1"
-	nfreqv1alpha1 "github.com/s3wong/api/nf_requirements/v1alpha1"
-	//porchv1alpha1 "github.com/s3wong/porchapi/api/v1alpha1"
-	//nfreqv1alpha1 "github.com/nephio-project/api/nf_requirements/v1alpha1"
+	//porchv1alpha1 "github.com/GoogleContainerTools/kpt/porch/api/porch/v1alpha1"
+	nftopov1alpha1 "github.com/nephio-project/api/nf_topology/v1alpha1"
+	//nftopov1alpha1 "github.com/s3wong/api/nf_topology/v1alpha1"
 	//porchv1alpha1 "github.com/s3wong/porchapi/api/v1alpha1"
 
-	"github.com/s3wong/nftopology/controllers"
+	"github.com/nephio-project/nephio/operators/nftopology/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
+// dummy stuff
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -51,7 +51,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	//utilruntime.Must(porchv1alpha1.AddToScheme(scheme))
 	//utilruntime.Must(nfdeployv1alpha1.AddToScheme(scheme))
-	//utilruntime.Must(nfreqv1alpha1.AddToScheme(scheme))
 
 	//+kubebuilder:scaffold:scheme
 }
@@ -97,9 +96,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	schemeBuilder := &runscheme.Builder{GroupVersion: nfreqv1alpha1.GroupVersion}
-	schemeBuilder.Register(&nfreqv1alpha1.NFTopology{}, &nfreqv1alpha1.NFTopologyList{})
-	schemeBuilder.Register(&nfreqv1alpha1.NFClass{}, &nfreqv1alpha1.NFClassList{})
+	schemeBuilder := &runscheme.Builder{GroupVersion: nftopov1alpha1.GroupVersion}
+	schemeBuilder.Register(&nftopov1alpha1.NFTopology{}, &nftopov1alpha1.NFTopologyList{})
 	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
 		setupLog.Error(err, "Unable to register NFTopology and NFClass kinds")
 		os.Exit(1)
@@ -110,21 +108,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "NFTopology")
-		os.Exit(1)
-	}
-
-	schemeBuilder = &runscheme.Builder{GroupVersion: porchv1alpha1.GroupVersion}
-	schemeBuilder.Register(&porchv1alpha1.PackageRevision{}, &porchv1alpha1.PackageRevisionList{})
-	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
-		setupLog.Error(err, "Unable to register PackageRevision kind")
-		os.Exit(1)
-	}
-
-	if err = (&controllers.PackageRevisionReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "PackageRevision")
 		os.Exit(1)
 	}
 
