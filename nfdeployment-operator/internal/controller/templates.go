@@ -39,36 +39,38 @@ const free5gcHelmConfigMapData = `
         gatewayIP: {{ .N3GATEWAY }}
         excludeIP: {{ .N3EXCLUDEIP }}
       {{ end }})
+      ({{ if .N4ENABLED }}
       n4network:
         enabled: true
-        name: n4network
-        type: ipvlan
-        masterIf: eth0
-        subnetIP: 10.100.50.240
-        cidr: 29
-        gatewayIP: 10.100.50.246
-        excludeIP: 10.100.50.246
+        name: {{ .N4NETWORKNAME }}
+        type: {{ .N4CNINAME }}
+        masterIf: {{ .N4CNIMASTERINTF }}
+        subnetIP: {{ .N4SUBNET }}
+        cidr: {{ .N4CIDR }}
+        gatewayIP: {{ .N4GATEWAY }}
+        excludeIP: {{ .N4EXCLUDEIP }}
+      {{ end }})
       ({{ if .N6ENABLED }}
       n6network:
         enabled: true
-        name: n6network
-        type: ipvlan
-        masterIf: eth1
-        subnetIP: 10.100.100.0
-        cidr: 24
-        gatewayIP: 10.100.100.1
-        excludeIP: 10.100.100.254
+        name: {{ .N6NETWORKNAME }}
+        type: {{ .N6CNINAME }}
+        masterIf: {{ .N6CNIMASTERINTF }}
+        subnetIP: {{ .N6SUBNET }}
+        cidr: {{ .N6CIDR }}
+        gatewayIP: {{ .N6GATEWAY }}
+        excludeIP: {{ .N6EXCLUDEIP }}
       {{ end }})
       ({{ if .N9ENABLED }}
       n9network:
         enabled: true
-        name: n9network
-        type: ipvlan
-        masterIf: eth0
-        subnetIP: 10.100.50.224
-        cidr: 29
-        gatewayIP: 10.100.50.230
-        excludeIP: 10.100.50.230
+        name: {{ .N9NETWORKNAME }}
+        type: {{ .N9CNINAME }}
+        masterIf: {{ .N9CNIMASTERINTF }}
+        subnetIP: {{ .N9SUBNET }}
+        cidr: {{ .N9CIDR }}
+        gatewayIP: {{ .N9GATEWAY }}
+        excludeIP: {{ .N9EXCLUDEIP }}
       {{ end }})
     deployUpf: true
 `
@@ -78,24 +80,44 @@ var (
 )
 
 type configurationTemplateValues struct {
-	PFCP_IP string
-	GTPU_IP string
-	N6cfg   []nephiov1alpha1.NetworkInstance
-	N6gw    string
+	NAME            string
+	N3ENABLED       bool
+    N3NETWORKNAME   string
+    N3CNINAME       string
+    N3CNIMASTERINTF string
+    N3SUBNET        string
+    N3CIDR          string
+    N3GATEWAY       string
+    N3EXCLUDEIP     string
+	N4ENABLED       bool
+    N4NETWORKNAME   string
+    N4CNINAME       string
+    N4CNIMASTERINTF string
+    N4SUBNET        string
+    N4CIDR          string
+    N4GATEWAY       string
+    N4EXCLUDEIP     string
+	N6ENABLED       bool
+    N6NETWORKNAME   string
+    N6CNINAME       string
+    N6CNIMASTERINTF string
+    N6SUBNET        string
+    N6CIDR          string
+    N6GATEWAY       string
+    N6EXCLUDEIP     string
+	N9ENABLED       bool
+    N9NETWORKNAME   string
+    N9CNINAME       string
+    N9CNIMASTERINTF string
+    N9SUBNET        string
+    N9CIDR          string
+    N9GATEWAY       string
+    N9EXCLUDEIP     string
 }
 
 func renderConfigurationTemplate(values configurationTemplateValues) (string, error) {
 	var buffer bytes.Buffer
 	if err := configurationTemplate.Execute(&buffer, values); err == nil {
-		return buffer.String(), nil
-	} else {
-		return "", err
-	}
-}
-
-func renderWrapperScriptTemplate(values configurationTemplateValues) (string, error) {
-	var buffer bytes.Buffer
-	if err := wrapperScriptTemplate.Execute(&buffer, values); err == nil {
 		return buffer.String(), nil
 	} else {
 		return "", err

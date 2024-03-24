@@ -109,7 +109,65 @@ func (r *NFDeploymentReconciler) OnDeleteResource(nfDeployment *nephiov1alpha1.N
 
 func HandleHelmFlux(c client.Client, nfDeployment *nephiov1alpha1.NFDeployment) {
     // temp func
+    templateValues := configurationTemplateValues{}
+    n4ip, n4Gateway, err := nfdeploylib.GetFirstInterfaceConfigIPv4(upfDeployment.Spec.Interfaces, "n4")
+    if err == nil {
+        templateValues.N4ENABLED = true
+        if ipAddr, _, err := net.ParseCIDR(n4ip); err == nil {
+            templateValues.N4SUBNET = ipAddr
+            templateValues.N4CIDR = strings.Split(n4ip, "/")[1]
+            templateValues.N4GATEWAY = n4Gateway
+            templateValues.N4EXCLUDEIP = n4Gateway
+            // TODO: hardcoded values
+            templateValues.N4NETWORKNAME = "n4network"
+            templateValues.N4CNINAME = "macvlan"
+            templateValues.N4CNIMASTERINTF = "eth0"
+        } else {
+            templateValues.N4ENABLED = false
+        }
+    } else {
+        templateValues.N4ENABLED = false
+    }
 
+    n3ip, n3Gateway, err := nfdeploylib.GetFirstInterfaceConfigIPv4(upfDeployment.Spec.Interfaces, "n3")
+    if err == nil {
+        templateValues.N3ENABLED = true
+        if ipAddr, _, err := net.ParseCIDR(n3ip); err == nil {
+            templateValues.N3SUBNET = ipAddr
+            templateValues.N3CIDR = strings.Split(n3ip, "/")[1]
+            templateValues.N3GATEWAY = n3Gateway
+            templateValues.N3EXCLUDEIP = n3Gateway
+            // TODO: hardcoded values
+            templateValues.N3NETWORKNAME = "n3network"
+            templateValues.N3CNINAME = "macvlan"
+            templateValues.N3CNIMASTERINTF = "eth0"
+        } else {
+            templateValues.N3ENABLED = false
+        }
+    } else {
+        templateValues.N3ENABLED = false
+    }
+
+    n6ip, n6Gateway, err := nfdeploylib.GetFirstInterfaceConfig(upfDeployment.Spec.Interfaces, "n6")
+    if err == nil {
+        templateValues.N6ENABLED = true
+        if ipAddr, _, err := net.ParseCIDR(n6ip); err == nil {
+            templateValues.N6SUBNET = ipAddr
+            templateValues.N6CIDR = strings.Split(n6ip, "/")[1]
+            templateValues.N6GATEWAY = n6Gateway
+            templateValues.N6EXCLUDEIP = n6Gateway
+            // TODO: hardcoded values
+            templateValues.N6NETWORKNAME = "n6network"
+            templateValues.N6CNINAME = "macvlan"
+            templateValues.N6CNIMASTERINTF = "eth0"
+        } else {
+            templateValues.N6ENABLED = false
+        }
+    } else {
+        templateValues.N6ENABLED = false
+    }
+
+    return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
