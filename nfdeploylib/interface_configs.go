@@ -48,13 +48,13 @@ func GetFirstInterfaceConfig(interfaceConfigs []nephiov1alpha1.InterfaceConfig, 
 func GetFirstInterfaceConfigIPv4(interfaceConfigs []nephiov1alpha1.InterfaceConfig, interfaceName string) (string, string, error) {
 	interfaceConfig, err := GetFirstInterfaceConfig(interfaceConfigs, interfaceName)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	ip, _, err := net.ParseCIDR(interfaceConfig.IPv4.Address)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	return ip.String(), interfaceConfig.IPv4.Gateway, nil
+	return ip.String(), *interfaceConfig.IPv4.Gateway, nil
 }

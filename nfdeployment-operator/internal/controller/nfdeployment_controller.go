@@ -18,6 +18,9 @@ package controller
 
 import (
 	"context"
+    "net"
+
+    "github.com/s3wong/nephio-code/nfdeploylib"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -109,6 +112,9 @@ func (r *NFDeploymentReconciler) OnDeleteResource(nfDeployment *nephiov1alpha1.N
 
 func HandleHelmFlux(c client.Client, nfDeployment *nephiov1alpha1.NFDeployment) {
     // temp func
+    namespace := nfDeployment.Namespace
+    instanceName := nfDeployment.Name
+
     templateValues := configurationTemplateValues{}
     n4ip, n4Gateway, err := nfdeploylib.GetFirstInterfaceConfigIPv4(upfDeployment.Spec.Interfaces, "n4")
     if err == nil {
@@ -165,6 +171,24 @@ func HandleHelmFlux(c client.Client, nfDeployment *nephiov1alpha1.NFDeployment) 
         }
     } else {
         templateValues.N6ENABLED = false
+    }
+
+    if configuration, err := renderConfigurationTemplate(templateValues); err != nil {
+        return err
+    }
+
+    configMap := &apiv1.ConfigMap{
+        TypeMeta: metav1.TypeMeta{
+            APIVersion: "v1",
+            Kind:       "ConfigMap",
+        },
+        ObjectMeta: metav1.ObjectMeta{
+            Namespace: namespace,
+            Name:      instanceName,
+        },
+        Data: map[string]string{
+            "values.yaml": configuration,
+        },
     }
 
     return nil
