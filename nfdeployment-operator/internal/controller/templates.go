@@ -19,8 +19,7 @@ package controller
 import (
 	"bytes"
 	"text/template"
-
-	nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
+	//nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
 )
 
 const free5gcHelmConfigMapData = `
@@ -76,43 +75,43 @@ const free5gcHelmConfigMapData = `
 `
 
 var (
-	helmConfigTemplate = template.Must(template.New("Free5gcHelmFluxConfig").Parse(free5gcHelmConfigMapData))
+	configurationTemplate = template.Must(template.New("Free5gcHelmFluxConfig").Parse(free5gcHelmConfigMapData))
 )
 
 type configurationTemplateValues struct {
 	NAME            string
 	N3ENABLED       bool
-    N3NETWORKNAME   string
-    N3CNINAME       string
-    N3CNIMASTERINTF string
-    N3SUBNET        string
-    N3CIDR          string
-    N3GATEWAY       string
-    N3EXCLUDEIP     string
+	N3NETWORKNAME   string
+	N3CNINAME       string
+	N3CNIMASTERINTF string
+	N3SUBNET        string
+	N3CIDR          string
+	N3GATEWAY       string
+	N3EXCLUDEIP     string
 	N4ENABLED       bool
-    N4NETWORKNAME   string
-    N4CNINAME       string
-    N4CNIMASTERINTF string
-    N4SUBNET        string
-    N4CIDR          string
-    N4GATEWAY       string
-    N4EXCLUDEIP     string
+	N4NETWORKNAME   string
+	N4CNINAME       string
+	N4CNIMASTERINTF string
+	N4SUBNET        string
+	N4CIDR          string
+	N4GATEWAY       string
+	N4EXCLUDEIP     string
 	N6ENABLED       bool
-    N6NETWORKNAME   string
-    N6CNINAME       string
-    N6CNIMASTERINTF string
-    N6SUBNET        string
-    N6CIDR          string
-    N6GATEWAY       string
-    N6EXCLUDEIP     string
+	N6NETWORKNAME   string
+	N6CNINAME       string
+	N6CNIMASTERINTF string
+	N6SUBNET        string
+	N6CIDR          string
+	N6GATEWAY       string
+	N6EXCLUDEIP     string
 	N9ENABLED       bool
-    N9NETWORKNAME   string
-    N9CNINAME       string
-    N9CNIMASTERINTF string
-    N9SUBNET        string
-    N9CIDR          string
-    N9GATEWAY       string
-    N9EXCLUDEIP     string
+	N9NETWORKNAME   string
+	N9CNINAME       string
+	N9CNIMASTERINTF string
+	N9SUBNET        string
+	N9CIDR          string
+	N9GATEWAY       string
+	N9EXCLUDEIP     string
 }
 
 func renderConfigurationTemplate(values configurationTemplateValues) (string, error) {

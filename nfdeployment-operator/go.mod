@@ -1,11 +1,15 @@
 module nephio-sdk
 
-go 1.21
+go 1.22.0
+
+replace github.com/s3wong/nephio-code/nfdeploylib => /home/skfwong_google_com/nephio-code/nfdeploylib
 
 require (
-	github.com/nephio-project/api v1.0.0
+	github.com/nephio-project/api v1.0.1-0.20231006162045-9ad2d0db2a8d
 	github.com/onsi/ginkgo/v2 v2.14.0
 	github.com/onsi/gomega v1.30.0
+	github.com/s3wong/nephio-code/nfdeploylib v0.0.0-00010101000000-000000000000
+	k8s.io/api v0.29.0
 	k8s.io/apimachinery v0.29.0
 	k8s.io/client-go v0.29.0
 	sigs.k8s.io/controller-runtime v0.17.0
@@ -68,7 +72,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.29.0 // indirect
 	k8s.io/apiextensions-apiserver v0.29.0 // indirect
 	k8s.io/component-base v0.29.0 // indirect
 	k8s.io/klog/v2 v2.110.1 // indirect
