@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"net"
 	"strings"
 
 	nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
@@ -88,6 +87,11 @@ func (r *NFDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request
 				// retry
 				return ctrl.Result{}, err
 			}
+
+			controllerutil.RemoveFinalizer(nfDeployment, finalizerName)
+			if err := r.Update(ctx, nfDeployment); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
 
 		// delete successful
@@ -121,65 +125,59 @@ func HandleHelmFlux(c client.Client, nfDeployment *nephiov1alpha1.NFDeployment) 
 	namespace := nfDeployment.Namespace
 	instanceName := nfDeployment.Name
 
-	templateValues := configurationTemplateValues{}
-	n4ip, n4Gateway, err := nfdeploylib.GetFirstInterfaceConfigIPv4(nfDeployment.Spec.Interfaces, "n4")
+	templateValues := new(configurationTemplateValues)
+	n4ip, n4Gateway, n4net, err := nfdeploylib.GetFirstInterfaceConfigIPv4(nfDeployment.Spec.Interfaces, "n4")
 	if err == nil {
 		templateValues.N4ENABLED = true
-		if ipAddr, _, err := net.ParseCIDR(n4ip); err == nil {
-			templateValues.N4SUBNET = ipAddr.String()
-			templateValues.N4CIDR = strings.Split(n4ip, "/")[1]
-			templateValues.N4GATEWAY = n4Gateway
-			templateValues.N4EXCLUDEIP = n4Gateway
-			// TODO: hardcoded values
-			templateValues.N4NETWORKNAME = "n4network"
-			templateValues.N4CNINAME = "macvlan"
-			templateValues.N4CNIMASTERINTF = "eth0"
-		} else {
-			templateValues.N4ENABLED = false
-		}
+		templateValues.N4SUBNET = n4ip
+		templateValues.N4CIDR = strings.Split(n4net, "/")[1]
+		templateValues.N4GATEWAY = n4Gateway
+		templateValues.N4EXCLUDEIP = n4Gateway
+		// TODO: hardcoded values
+		templateValues.N4NETWORKNAME = "n4network"
+		templateValues.N4CNINAME = "macvlan"
+		templateValues.N4CNIMASTERINTF = "eth0"
 	} else {
+		fmt.Printf("SKW GetFirstInterfaceConfigIPv4 for n4 returns error %v\n", err)
 		templateValues.N4ENABLED = false
 	}
 
-	n3ip, n3Gateway, err := nfdeploylib.GetFirstInterfaceConfigIPv4(nfDeployment.Spec.Interfaces, "n3")
+	n3ip, n3Gateway, n3net, err := nfdeploylib.GetFirstInterfaceConfigIPv4(nfDeployment.Spec.Interfaces, "n3")
 	if err == nil {
 		templateValues.N3ENABLED = true
-		if ipAddr, _, err := net.ParseCIDR(n3ip); err == nil {
-			templateValues.N3SUBNET = ipAddr.String()
-			templateValues.N3CIDR = strings.Split(n3ip, "/")[1]
-			templateValues.N3GATEWAY = n3Gateway
-			templateValues.N3EXCLUDEIP = n3Gateway
-			// TODO: hardcoded values
-			templateValues.N3NETWORKNAME = "n3network"
-			templateValues.N3CNINAME = "macvlan"
-			templateValues.N3CNIMASTERINTF = "eth0"
-		} else {
-			templateValues.N3ENABLED = false
-		}
+		templateValues.N3SUBNET = n3ip
+		templateValues.N3CIDR = strings.Split(n3net, "/")[1]
+		templateValues.N3GATEWAY = n3Gateway
+		templateValues.N3EXCLUDEIP = n3Gateway
+		// TODO: hardcoded values
+		templateValues.N3NETWORKNAME = "n3network"
+		templateValues.N3CNINAME = "macvlan"
+		templateValues.N3CNIMASTERINTF = "eth0"
 	} else {
+		fmt.Printf("SKW GetFirstInterfaceConfigIPv4 for n3 returns error %v\n", err)
 		templateValues.N3ENABLED = false
 	}
 
-	n6ip, n6Gateway, err := nfdeploylib.GetFirstInterfaceConfigIPv4(nfDeployment.Spec.Interfaces, "n6")
+	n6ip, n6Gateway, n6net, err := nfdeploylib.GetFirstInterfaceConfigIPv4(nfDeployment.Spec.Interfaces, "n6")
 	if err == nil {
 		templateValues.N6ENABLED = true
-		if ipAddr, _, err := net.ParseCIDR(n6ip); err == nil {
-			templateValues.N6SUBNET = ipAddr.String()
-			templateValues.N6CIDR = strings.Split(n6ip, "/")[1]
-			templateValues.N6GATEWAY = n6Gateway
-			templateValues.N6EXCLUDEIP = n6Gateway
-			// TODO: hardcoded values
-			templateValues.N6NETWORKNAME = "n6network"
-			templateValues.N6CNINAME = "macvlan"
-			templateValues.N6CNIMASTERINTF = "eth0"
-		} else {
-			templateValues.N6ENABLED = false
-		}
+		templateValues.N6SUBNET = n6ip
+		templateValues.N6CIDR = strings.Split(n6net, "/")[1]
+		templateValues.N6GATEWAY = n6Gateway
+		templateValues.N6EXCLUDEIP = n6Gateway
+		// TODO: hardcoded values
+		templateValues.N6NETWORKNAME = "n6network"
+		templateValues.N6CNINAME = "macvlan"
+		templateValues.N6CNIMASTERINTF = "eth0"
 	} else {
+		fmt.Printf("SKW GetFirstInterfaceConfigIPv4 for n6 returns error %v\n", err)
 		templateValues.N6ENABLED = false
 	}
 
-	if configuration, err := renderConfigurationTemplate(templateValues); err != nil {
+	fmt.Printf("SKW: nfDeployment is %v\n", nfDeployment.Spec)
+	fmt.Printf("SKW: templateValues is %v\n", templateValues)
+
+	if configuration, err := renderConfigurationTemplate(*templateValues); err != nil {
 		return err
 	} else {
 		configMap := &apiv1.ConfigMap{

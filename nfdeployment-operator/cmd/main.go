@@ -32,9 +32,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	runscheme "sigs.k8s.io/controller-runtime/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
+	refv1alpha1 "github.com/nephio-project/api/references/v1alpha1"
 	"nephio-sdk/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
@@ -122,6 +124,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	schemeBuilder := &runscheme.Builder{GroupVersion: nephiov1alpha1.GroupVersion}
+
+	schemeBuilder.Register(&nephiov1alpha1.NFDeployment{}, &nephiov1alpha1.NFDeploymentList{})
+	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
+		fail(err, "Not able to register NFDeployment kind")
+	}
+
+	schemeBuilder = &runscheme.Builder{GroupVersion: refv1alpha1.GroupVersion}
+	schemeBuilder.Register(&refv1alpha1.Config{}, &refv1alpha1.ConfigList{})
+	if err := schemeBuilder.AddToScheme(mgr.GetScheme()); err != nil {
+		fail(err, "Not able to register Config.ref kind")
+	}
+
 	if err = (&controller.NFDeploymentReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -145,4 +160,9 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func fail(err error, msg string, keysAndValues ...any) {
+	setupLog.Error(err, msg, keysAndValues...)
+	os.Exit(1)
 }
