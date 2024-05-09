@@ -1,0 +1,23 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: free5gc-upf-1
+  namespace: free5gc
+spec:
+  interval: 1m
+  chart:
+    spec:
+      chart: ./charts/free5gc 
+      version: '1.1.x'
+      sourceRef:
+        kind: GitRepository
+        name: free5gc-gitrepo
+        namespace: flux-system
+      reconcileStrategy: Revision
+      interval: 1m
+  targetNamespace: free5gc
+  valuesFrom:
+  - kind: ConfigMap
+    name: free5gc-upf-1
+    valuesKey: values.yaml
+

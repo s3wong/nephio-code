@@ -1,0 +1,49 @@
+kind: ConfigMap
+metadata:
+  name: free5gc-upf-1
+  namespace: free5gc
+apiVersion: v1
+data:
+  values.yaml: |+
+    global:
+      name: free5gc-upf-1
+      n3network:
+        enabled: true
+        name: n3network
+        type: ipvlan
+        masterIf: eth0
+        subnetIP: 10.10.50.2
+        cidr: 24
+        gatewayIP: 10.10.50.1
+        excludeIP: 10.10.50.1
+      n4network:
+        enabled: true
+        name: n4network
+        type: ipvlan
+        masterIf: eth0
+        subnetIP: 10.10.30.2
+        cidr: 24
+        gatewayIP: 10.10.30.1
+        excludeIP: 10.10.30.1
+      n6network:
+        enabled: true
+        name: n6network
+        type: ipvlan
+        masterIf: eth1
+        subnetIP: 10.10.40.2
+        cidr: 24
+        gatewayIP: 10.10.40.1
+        excludeIP: 10.10.40.1
+    deployMongoDb: false
+    deployAmf: false
+    deployAusf: false
+    deployN3iwf: false
+    deployNrf: false
+    deployNssf: false
+    deployPcf: false
+    deploySmf: false
+    deployUdm: false
+    deployUdr: false
+    deployUpf: true
+    deployWebui: false
+    deployDbPython: false

@@ -1,0 +1,12 @@
+apiVersion: workload.nephio.org/v1alpha1
+kind: NFDeployment
+metadata:
+  labels:
+    app.kubernetes.io/name: nfdeployment
+    app.kubernetes.io/instance: nfdeployment-sample
+    app.kubernetes.io/part-of: nfdeployment-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: nfdeployment-operator
+  name: nfdeployment-sample
+spec:
+  # TODO(user): Add fields here

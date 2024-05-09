@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- nephio.free5gc.org_v1alpha1_nfdeploy.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
