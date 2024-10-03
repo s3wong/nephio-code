@@ -1,0 +1,61 @@
+/*
+Copyright 2024 The Nephio Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+syntax="proto3";
+package proto;
+
+option go_package = "../nfdeploymentrpc";
+
+message Capacity {
+    string maxuplinkthroughput = 1;
+    string maxdownlinkthroughput = 2;
+    int32 maxsessions = 3;
+    int32 maxsubscribers = 4;
+    uint32 maxnfconnections = 5;
+}
+
+message IPv4 {
+    string address = 1;
+    string gateway = 2;
+}
+
+message IPv6 {
+    string address = 1;
+    string gateway = 2;
+}
+
+message InterfaceConfig {
+    string name = 1;
+    IPv4 ipv4 = 2;
+    IPv6 ipv6 = 3;
+    uint32 vlanid = 4;
+}
+
+message NFDeployment {
+    string name = 1;
+    string namespace = 2;
+    Capacity capacity = 3;
+    repeated InterfaceConfig ifconfig = 4;
+}
+
+message NFDeploymentResponse {
+    string condition = 1;
+    string errormsg = 2;
+}
+
+service NFDeploymentRPC {
+    rpc CreateUpdate(NFDeployment) returns(NFDeploymentResponse) {}
+    rpc Delete(NFDeployment) returns(NFDeploymentResponse) {}
+}

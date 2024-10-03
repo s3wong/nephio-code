@@ -20,9 +20,13 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	nephiov1alpha1 "github.com/nephio-project/api/nf_deployments/v1alpha1"
 	"github.com/s3wong/nephio-code/nfdeploylib"
+	pb "github.com/s3wong/nephio-code/nfdeploymentrpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	apiv1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,6 +43,7 @@ import (
 // NFDeploymentReconciler reconciles a NFDeployment object
 type NFDeploymentReconciler struct {
 	client.Client
+	//grpcClient  *pb.NFDeploymentRPCClient
 	Scheme *runtime.Scheme
 }
 
@@ -69,6 +74,17 @@ func (r *NFDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return reconcile.Result{}, err
 	}
 
+	conn, err := grpc.Dial("free5gc-upf:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Error(err, "grpc connection to free5gc-upf failed")
+		return reconcile.Result{}, err
+	}
+	defer conn.Close()
+
+	c := pb.NewNFDeploymentRPCClient(conn)
+	grpcCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	// name of custom finalizer
 	finalizerName := "nfdeployment.nephio.org/finalizer"
 
@@ -98,18 +114,81 @@ func (r *NFDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.OnCreateUpdateResource(nfDeployment); err != nil {
-		// retry
+	/*
+		if err := r.OnCreateUpdateResource(nfDeployment); err != nil {
+			// retry
+			return ctrl.Result{}, err
+		}
+	*/
+	nfdeploymentPB := ConvertNFDeployment2gRPCMsg(nfDeployment)
+	rsp, err := c.CreateUpdate(grpcCtx, nfdeploymentPB)
+	if err != nil {
+		log.Error(err, "CreateUpdate RPC failed")
 		return ctrl.Result{}, err
 	}
+	fmt.Printf("Response: condition => %v   errormsg => %v\n", rsp.Condition, rsp.Errormsg)
 
 	return ctrl.Result{}, nil
+}
+
+func BuildInterfaceConfig(nfDeployment *nephiov1alpha1.NFDeployment) []*pb.InterfaceConfig {
+	var ret []*pb.InterfaceConfig
+	for _, intf := range nfDeployment.Spec.Interfaces {
+		intfConfigPB := pb.InterfaceConfig{}
+		if intf.IPv4 != nil {
+			ipv4PB := pb.IPv4{}
+			if intf.IPv4.Gateway != nil {
+				ipv4PB.Gateway = *intf.IPv4.Gateway
+			} else {
+				ipv4PB.Gateway = ""
+			}
+			ipv4PB.Address = intf.IPv4.Address
+			intfConfigPB.Ipv4 = &ipv4PB
+		} else {
+			intfConfigPB.Ipv4 = nil
+		}
+		if intf.IPv6 != nil {
+			ipv6PB := pb.IPv6{}
+			if intf.IPv6.Gateway != nil {
+				ipv6PB.Gateway = *intf.IPv6.Gateway
+			} else {
+				ipv6PB.Gateway = ""
+			}
+			ipv6PB.Address = intf.IPv6.Address
+			intfConfigPB.Ipv6 = &ipv6PB
+		} else {
+			intfConfigPB.Ipv6 = nil
+		}
+		if intf.VLANID != nil {
+			intfConfigPB.Vlanid = uint32(*intf.VLANID)
+		} else {
+			intfConfigPB.Vlanid = 0
+		}
+		ret = append(ret, &intfConfigPB)
+	}
+	return ret
+}
+
+func ConvertNFDeployment2gRPCMsg(nfDeployment *nephiov1alpha1.NFDeployment) *pb.NFDeployment {
+	intfSlice := BuildInterfaceConfig(nfDeployment)
+	ret := &pb.NFDeployment{
+		Name:      nfDeployment.ObjectMeta.Name,
+		Namespace: nfDeployment.ObjectMeta.Namespace,
+		Capacity: &pb.Capacity{
+			Maxuplinkthroughput:   nfDeployment.Spec.Capacity.MaxUplinkThroughput.String(),
+			Maxdownlinkthroughput: nfDeployment.Spec.Capacity.MaxDownlinkThroughput.String(),
+			Maxsessions:           int32(nfDeployment.Spec.Capacity.MaxSessions),
+			Maxsubscribers:        int32(nfDeployment.Spec.Capacity.MaxSubscribers),
+			Maxnfconnections:      uint32(nfDeployment.Spec.Capacity.MaxNFConnections),
+		},
+		Ifconfig: intfSlice,
+	}
+	return ret
 }
 
 func (r *NFDeploymentReconciler) OnCreateUpdateResource(nfDeployment *nephiov1alpha1.NFDeployment) error {
 	switch nfDeployment.Spec.Provider {
 	case "sdk.nephio.org/helm/flux":
-		// TODO(s3wong): temp function, should use plugin
 		return HandleHelmFlux(r.Client, nfDeployment)
 	default:
 		return fmt.Errorf("Unknown provider for NFDeployment: %s", nfDeployment.Spec.Provider)
