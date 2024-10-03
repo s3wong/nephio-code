@@ -1,0 +1,12 @@
+apiVersion: nephio.free5gc.org.free5gc.org/v1alpha1
+kind: NFDeploy
+metadata:
+  labels:
+    app.kubernetes.io/name: nfdeploy
+    app.kubernetes.io/instance: nfdeploy-sample
+    app.kubernetes.io/part-of: free5gc-upf
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: free5gc-upf
+  name: nfdeploy-sample
+spec:
+  # TODO(user): Add fields here

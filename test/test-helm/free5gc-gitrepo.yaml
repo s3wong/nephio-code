@@ -1,0 +1,15 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: free5gc-gitrepo
+  namespace: flux-system
+spec:
+  interval: 10s
+  url: https://github.com/Orange-OpenSource/towards5gs-helm
+  ref:
+    branch: main
+  ignore: |
+    # exclude all
+    /*
+    # include charts dir
+    !/charts
